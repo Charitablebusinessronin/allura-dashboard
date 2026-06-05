@@ -1,6 +1,11 @@
 import { RouterProvider } from "react-router";
+import { PolicyProvider } from "../lib/policy/PolicyContext";
 import { router } from "./routes";
 
 export default function App() {
-  return <RouterProvider router={router} />;
+  return (
+    <PolicyProvider>
+      <RouterProvider router={router} />
+    </PolicyProvider>
+  );
 }
