@@ -48,9 +48,7 @@ export function AppShell() {
         <div className="p-6 border-b border-border">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="size-10 rounded-xl bg-allura-blue flex items-center justify-center">
-                <span className="text-white font-bold text-lg">A</span>
-              </div>
+              <img src="/allura-icon.svg" alt="Allura" className="size-10" />
               <div>
                 <div className="text-xl font-semibold text-foreground">allura</div>
                 <div className="text-xs text-muted-foreground">Memory</div>
