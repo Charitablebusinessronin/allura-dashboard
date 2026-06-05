@@ -10,25 +10,25 @@ describe("Badge", () => {
 
   it("applies blue variant by default", () => {
     const { container } = render(<Badge>Default</Badge>);
-    expect(container.firstChild).toHaveClass("bg-[#E8F0FE]");
-    expect(container.firstChild).toHaveClass("text-[#0C56EB]");
+    expect(container.firstChild).toHaveClass("bg-primary/10");
+    expect(container.firstChild).toHaveClass("text-primary");
   });
 
   it("applies green variant", () => {
     const { container } = render(<Badge variant="green">Success</Badge>);
-    expect(container.firstChild).toHaveClass("bg-[#E0F5EE]");
-    expect(container.firstChild).toHaveClass("text-[#0C9154]");
+    expect(container.firstChild).toHaveClass("bg-allura-green/10");
+    expect(container.firstChild).toHaveClass("text-allura-green");
   });
 
   it("applies coral variant", () => {
     const { container } = render(<Badge variant="coral">Error</Badge>);
-    expect(container.firstChild).toHaveClass("bg-[#FFF1EC]");
-    expect(container.firstChild).toHaveClass("text-[#FB5D0F]");
+    expect(container.firstChild).toHaveClass("bg-allura-orange/10");
+    expect(container.firstChild).toHaveClass("text-allura-orange");
   });
 
   it("applies gray variant", () => {
     const { container } = render(<Badge variant="gray">Pending</Badge>);
-    expect(container.firstChild).toHaveClass("bg-[#F3F4F6]");
-    expect(container.firstChild).toHaveClass("text-[#5A6071]");
+    expect(container.firstChild).toHaveClass("bg-muted");
+    expect(container.firstChild).toHaveClass("text-muted-foreground");
   });
 });
