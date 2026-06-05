@@ -1,0 +1,46 @@
+services:
+  # ─── Allura Dashboard (React SPA) ──────────────────────────────
+  dashboard:
+    build:
+      context: /home/ronin704/Projects/ai-agents/allura-dashboard
+      dockerfile: Dockerfile
+    container_name: allura-dashboard
+    ports:
+      - "${DASHBOARD_PORT:-8420}:80"
+    environment:
+      - VITE_API_BASE_URL=http://mock-api:13400
+    networks:
+      - allura
+    depends_on:
+      - mock-api
+    restart: unless-stopped
+
+  # ─── Allura Mock API (Bun) ─────────────────────────────────────
+  mock-api:
+    build:
+      context: /home/ronin704/Projects/ai-agents/allura-dashboard
+      dockerfile: mock-api/Dockerfile
+    container_name: allura-mock-api
+    ports:
+      - "${MOCK_API_PORT:-13400}:13400"
+    environment:
+      - NODE_ENV=production
+      - MOCK_API_PORT=13400
+    networks:
+      - allura
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:13400/health || exit 0"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+networks:
+  allura:
+    name: allura
+    driver: bridge
+
+volumes:
+  aion-data:
+    name: allura-aion-data
