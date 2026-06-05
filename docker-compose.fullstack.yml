@@ -38,8 +38,7 @@ services:
 
 networks:
   allura:
-    name: allura
-    driver: bridge
+    external: true
 
 volumes:
   aion-data:
