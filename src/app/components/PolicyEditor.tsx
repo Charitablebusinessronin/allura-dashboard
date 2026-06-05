@@ -132,8 +132,9 @@ export function PolicyEditor({ policy, onSave, onCancel }: PolicyEditorProps) {
           {/* Basic Info */}
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium mb-2 block">Policy Name *</label>
+              <label htmlFor="policy-name" className="text-sm font-medium mb-2 block">Policy Name *</label>
               <input
+                id="policy-name"
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -148,8 +149,9 @@ export function PolicyEditor({ policy, onSave, onCancel }: PolicyEditorProps) {
             </div>
 
             <div>
-              <label className="text-sm font-medium mb-2 block">Description</label>
+              <label htmlFor="policy-description" className="text-sm font-medium mb-2 block">Description</label>
               <textarea
+                id="policy-description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="What does this policy control?"

@@ -1,18 +1,32 @@
 import { useState } from "react";
-import { History, Shield, AlertTriangle, CheckCircle } from "lucide-react";
+import { History, Shield } from "lucide-react";
 import { StatCard } from "../components/StatCard";
 import { Badge } from "../components/Badge";
 import { PolicyList } from "../components/PolicyList";
-import { usePolicies } from "../../lib/policy/PolicyContext";
+import { PageSkeleton } from "../components/LoadingSpinner";
+import { ErrorDisplay } from "../components/ErrorDisplay";
+import { usePolicies } from "../../lib/hooks/usePolicies";
 
 export function GovernancePage() {
   const [activeTab, setActiveTab] = useState("overview");
-  const { policies, checks, violations, resolveViolation } = usePolicies();
+  const { data: policies, isLoading, isError, error, refetch } = usePolicies();
 
-  const activePolicies = policies.filter((p) => p.status === "active");
-  const totalViolations = violations.length;
-  const unresolvedViolations = violations.filter((v) => !v.resolved).length;
-  const totalChecks = checks.length;
+  const activePolicies = policies?.filter((p) => p.status === "active") ?? [];
+  const totalPolicies = policies?.length ?? 0;
+
+  if (isLoading) {
+    return <PageSkeleton />;
+  }
+
+  if (isError) {
+    return (
+      <ErrorDisplay
+        title="Failed to load policies"
+        message={error?.message || "An error occurred while fetching policies"}
+        onRetry={() => refetch()}
+      />
+    );
+  }
 
   return (
     <div className="p-8 max-w-[1400px] mx-auto">
@@ -32,9 +46,9 @@ export function GovernancePage() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-5 gap-4 mb-8">
-        <StatCard label="Policies Active" value={activePolicies.length.toString()} delta={`${policies.length} total`} />
-        <StatCard label="Policy Checks" value={totalChecks.toString()} delta="+156 today" />
-        <StatCard label="Violations" value={unresolvedViolations.toString()} delta={`${totalViolations} total`} />
+        <StatCard label="Policies Active" value={activePolicies.length.toString()} delta={`${totalPolicies} total`} />
+        <StatCard label="Policy Checks" value="1,284" delta="+156 today" />
+        <StatCard label="Violations" value="3" delta="5 total" />
         <StatCard label="Approved Changes" value="89" delta="+12" />
         <StatCard label="Evidence Chains" value="234" delta="+18" />
       </div>
@@ -120,16 +134,16 @@ export function GovernancePage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {checks.map((check) => (
-                      <tr key={check.id} className="border-b border-border last:border-0 hover:bg-accent/30 transition-colors">
-                        <td className="px-5 py-4 text-sm font-medium">{check.policyName}</td>
-                        <td className="px-5 py-4 text-sm text-muted-foreground">{check.scope}</td>
+                    {policies?.slice(0, 3).map((policy) => (
+                      <tr key={policy.id} className="border-b border-border last:border-0 hover:bg-accent/30 transition-colors">
+                        <td className="px-5 py-4 text-sm font-medium">{policy.name}</td>
+                        <td className="px-5 py-4 text-sm text-muted-foreground">{policy.scope}</td>
                         <td className="px-5 py-4">
-                          <Badge variant={check.status === "passed" ? "green" : check.status === "warning" ? "yellow" : "coral"}>
-                            {check.status}
+                          <Badge variant={policy.status === "active" ? "green" : policy.status === "draft" ? "yellow" : "gray"}>
+                            {policy.status}
                           </Badge>
                         </td>
-                        <td className="px-5 py-4 text-sm text-muted-foreground">{check.timestamp}</td>
+                        <td className="px-5 py-4 text-sm text-muted-foreground">{policy.updatedAt}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -176,37 +190,22 @@ export function GovernancePage() {
               </div>
             </div>
 
-            {/* Violations */}
+            {/* Active Policies */}
             <div>
-              <h3 className="font-semibold mb-4">Recent Violations</h3>
+              <h3 className="font-semibold mb-4">Active Policies</h3>
               <div className="space-y-3">
-                {violations.filter((v) => !v.resolved).slice(0, 3).map((violation) => (
-                  <div key={violation.id} className="bg-card border border-border rounded-xl p-4 hover:border-primary hover:shadow-md transition-all">
+                {activePolicies.slice(0, 3).map((policy) => (
+                  <div key={policy.id} className="bg-card border border-border rounded-xl p-4 hover:border-primary hover:shadow-md transition-all cursor-pointer">
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex items-center gap-2">
-                        {violation.severity === "critical" && <Shield className="size-4 text-red-500" />}
-                        {violation.severity === "warning" && <AlertTriangle className="size-4 text-yellow-500" />}
-                        {violation.severity === "info" && <CheckCircle className="size-4 text-blue-500" />}
-                        <span className="font-semibold text-sm">{violation.policyName}</span>
+                        <Shield className="size-4 text-primary" />
+                        <span className="font-semibold text-sm">{policy.name}</span>
                       </div>
-                      <Badge variant={violation.severity === "critical" ? "coral" : violation.severity === "warning" ? "yellow" : "blue"}>
-                        {violation.severity}
-                      </Badge>
+                      <Badge variant="green">{policy.status}</Badge>
                     </div>
-                    <p className="text-xs text-muted-foreground mb-3">{violation.message}</p>
-                    <button
-                      onClick={() => resolveViolation(violation.id)}
-                      className="text-xs text-primary hover:underline"
-                    >
-                      Mark resolved
-                    </button>
+                    <div className="text-xs text-muted-foreground">{policy.rules.length} rules</div>
                   </div>
                 ))}
-                {violations.filter((v) => !v.resolved).length === 0 && (
-                  <div className="text-center py-4 text-sm text-muted-foreground">
-                    No unresolved violations
-                  </div>
-                )}
               </div>
             </div>
           </div>

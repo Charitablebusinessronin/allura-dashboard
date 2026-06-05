@@ -2,9 +2,31 @@ import { History, Send, ChevronDown } from "lucide-react";
 import { ActionCard } from "../components/ActionCard";
 import { StatCard } from "../components/StatCard";
 import { Badge } from "../components/Badge";
-import { recentDreams, quickActions, dreamInsights } from "../../lib/mock-data";
+import { PageSkeleton } from "../components/LoadingSpinner";
+import { ErrorDisplay } from "../components/ErrorDisplay";
+import { useDreams } from "../../lib/hooks/useDreams";
 
 export function DreamsPage() {
+  const { data: dreamsData, isLoading, isError, error, refetch } = useDreams();
+
+  if (isLoading) {
+    return <PageSkeleton />;
+  }
+
+  if (isError) {
+    return (
+      <ErrorDisplay
+        title="Failed to load dreams"
+        message={error?.message || "An error occurred while fetching dreams"}
+        onRetry={() => refetch()}
+      />
+    );
+  }
+
+  const recentDreams = dreamsData?.dreams ?? [];
+  const quickActions = dreamsData?.quickActions ?? [];
+  const dreamInsights = dreamsData?.insights ?? [];
+
   return (
     <div className="p-8 max-w-[1400px] mx-auto">
       {/* Header */}

@@ -1,8 +1,29 @@
 import { ChevronDown, Search, LayoutGrid, List, BarChart3, AlertTriangle } from "lucide-react";
 import { Badge } from "../components/Badge";
-import { kanbanTasks, kanbanStats } from "../../lib/mock-data";
+import { PageSkeleton } from "../components/LoadingSpinner";
+import { ErrorDisplay } from "../components/ErrorDisplay";
+import { useKanbanTasks } from "../../lib/hooks/useKanban";
 
 export function KanbanPage() {
+  const { data: kanbanData, isLoading, isError, error, refetch } = useKanbanTasks();
+
+  if (isLoading) {
+    return <PageSkeleton />;
+  }
+
+  if (isError) {
+    return (
+      <ErrorDisplay
+        title="Failed to load kanban tasks"
+        message={error?.message || "An error occurred while fetching tasks"}
+        onRetry={() => refetch()}
+      />
+    );
+  }
+
+  const columns = kanbanData?.columns ?? {};
+  const stats = kanbanData?.stats ?? { total: 0, inProgress: 0, inReview: 0, completed: 0, overdue: 0 };
+
   return (
     <div className="p-8 max-w-[1600px] mx-auto">
       {/* Header */}
@@ -50,7 +71,7 @@ export function KanbanPage() {
 
       {/* Kanban Columns */}
       <div className="grid grid-cols-4 gap-4 mb-6">
-        {Object.entries(kanbanTasks).map(([column, tasks]) => (
+        {Object.entries(columns).map(([column, tasks]) => (
           <div key={column} className="bg-muted/40 rounded-xl p-4">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold">{column}</h3>
@@ -109,23 +130,23 @@ export function KanbanPage() {
         <div className="grid grid-cols-5 gap-6">
           <div className="text-center">
             <div className="text-sm text-muted-foreground mb-2">Total Tasks</div>
-            <div className="text-2xl font-semibold">{kanbanStats.total}</div>
+            <div className="text-2xl font-semibold">{stats.total}</div>
           </div>
           <div className="text-center">
             <div className="text-sm text-muted-foreground mb-2">In Progress</div>
-            <div className="text-2xl font-semibold text-[#0C56EB]">{kanbanStats.inProgress}</div>
+            <div className="text-2xl font-semibold text-[#0C56EB]">{stats.inProgress}</div>
           </div>
           <div className="text-center">
             <div className="text-sm text-muted-foreground mb-2">In Review</div>
-            <div className="text-2xl font-semibold text-[#8B5CF6]">{kanbanStats.inReview}</div>
+            <div className="text-2xl font-semibold text-[#8B5CF6]">{stats.inReview}</div>
           </div>
           <div className="text-center">
             <div className="text-sm text-muted-foreground mb-2">Completed</div>
-            <div className="text-2xl font-semibold text-[#0C9154]">{kanbanStats.completed}</div>
+            <div className="text-2xl font-semibold text-[#0C9154]">{stats.completed}</div>
           </div>
           <div className="text-center">
             <div className="text-sm text-muted-foreground mb-2">Overdue</div>
-            <div className="text-2xl font-semibold text-[#FB5D0F]">{kanbanStats.overdue}</div>
+            <div className="text-2xl font-semibold text-[#FB5D0F]">{stats.overdue}</div>
           </div>
         </div>
       </div>
