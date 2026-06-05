@@ -1,6 +1,25 @@
 import { useState } from "react";
 import { X, Plus, Trash2, Shield, AlertTriangle, Info } from "lucide-react";
+import { z } from "zod";
 import type { Policy, PolicyRule, PolicyScope, PolicySeverity } from "../../lib/policy/types";
+
+const policyRuleSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1, "Rule name is required").max(100),
+  description: z.string().max(500).optional(),
+  condition: z.string().min(1, "Condition is required").max(500),
+  action: z.enum(["allow", "deny", "flag", "escalate"]),
+  severity: z.enum(["info", "warning", "critical"]),
+});
+
+const policySchema = z.object({
+  name: z.string().min(1, "Policy name is required").max(100),
+  description: z.string().max(500).optional(),
+  scope: z.enum(["global", "agent", "memory", "conversation", "team"]),
+  status: z.enum(["active", "draft", "archived"]),
+  rules: z.array(policyRuleSchema).min(1, "At least one rule is required"),
+  createdBy: z.string().min(1),
+});
 
 interface PolicyEditorProps {
   policy?: Policy;
@@ -30,6 +49,8 @@ export function PolicyEditor({ policy, onSave, onCancel }: PolicyEditorProps) {
   const [scope, setScope] = useState<PolicyScope>(policy?.scope ?? "global");
   const [rules, setRules] = useState<PolicyRule[]>(policy?.rules ?? []);
 
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
   const addRule = () => {
     const newRule: PolicyRule = {
       id: `rule-${Date.now()}`,
@@ -50,8 +71,32 @@ export function PolicyEditor({ policy, onSave, onCancel }: PolicyEditorProps) {
     setRules(rules.filter((_, i) => i !== index));
   };
 
+  const validate = (): boolean => {
+    const result = policySchema.safeParse({
+      name: name.trim(),
+      description: description.trim(),
+      scope,
+      status: policy?.status ?? "draft",
+      rules,
+      createdBy: policy?.createdBy ?? "Allura Admin",
+    });
+
+    if (result.success) {
+      setErrors({});
+      return true;
+    }
+
+    const newErrors: Record<string, string> = {};
+    result.error.issues.forEach((issue) => {
+      const path = issue.path.join(".");
+      newErrors[path] = issue.message;
+    });
+    setErrors(newErrors);
+    return false;
+  };
+
   const handleSave = () => {
-    if (!name.trim()) return;
+    if (!validate()) return;
     onSave({
       name: name.trim(),
       description: description.trim(),
@@ -93,8 +138,13 @@ export function PolicyEditor({ policy, onSave, onCancel }: PolicyEditorProps) {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="e.g., Memory Retention Policy"
-                className="w-full px-4 py-2.5 bg-muted/50 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-ring"
+                className={`w-full px-4 py-2.5 bg-muted/50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-ring ${
+                  errors.name ? "border-destructive" : "border-border"
+                }`}
               />
+              {errors.name && (
+                <p className="mt-1 text-xs text-destructive">{errors.name}</p>
+              )}
             </div>
 
             <div>
@@ -104,8 +154,13 @@ export function PolicyEditor({ policy, onSave, onCancel }: PolicyEditorProps) {
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="What does this policy control?"
                 rows={2}
-                className="w-full px-4 py-2.5 bg-muted/50 border border-border rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+                className={`w-full px-4 py-2.5 bg-muted/50 border rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-ring ${
+                  errors.description ? "border-destructive" : "border-border"
+                }`}
               />
+              {errors.description && (
+                <p className="mt-1 text-xs text-destructive">{errors.description}</p>
+              )}
             </div>
 
             <div>
@@ -155,13 +210,20 @@ export function PolicyEditor({ policy, onSave, onCancel }: PolicyEditorProps) {
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
-                    <input
-                      type="text"
-                      value={rule.name}
-                      onChange={(e) => updateRule(idx, { name: e.target.value })}
-                      placeholder="Rule name"
-                      className="px-3 py-2 bg-card border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                    />
+                    <div>
+                      <input
+                        type="text"
+                        value={rule.name}
+                        onChange={(e) => updateRule(idx, { name: e.target.value })}
+                        placeholder="Rule name"
+                        className={`w-full px-3 py-2 bg-card border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring ${
+                          errors[`rules.${idx}.name`] ? "border-destructive" : "border-border"
+                        }`}
+                      />
+                      {errors[`rules.${idx}.name`] && (
+                        <p className="mt-1 text-xs text-destructive">{errors[`rules.${idx}.name`]}</p>
+                      )}
+                    </div>
                     <select
                       value={rule.action}
                       onChange={(e) => updateRule(idx, { action: e.target.value as PolicyRule["action"] })}
@@ -181,13 +243,20 @@ export function PolicyEditor({ policy, onSave, onCancel }: PolicyEditorProps) {
                     className="w-full px-3 py-2 bg-card border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                   />
 
-                  <input
-                    type="text"
-                    value={rule.condition}
-                    onChange={(e) => updateRule(idx, { condition: e.target.value })}
-                    placeholder="Condition: e.g., memory.age > 30days"
-                    className="w-full px-3 py-2 bg-card border border-border rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-ring"
-                  />
+                  <div>
+                    <input
+                      type="text"
+                      value={rule.condition}
+                      onChange={(e) => updateRule(idx, { condition: e.target.value })}
+                      placeholder="Condition: e.g., memory.age > 30days"
+                      className={`w-full px-3 py-2 bg-card border rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-ring ${
+                        errors[`rules.${idx}.condition`] ? "border-destructive" : "border-border"
+                      }`}
+                    />
+                    {errors[`rules.${idx}.condition`] && (
+                      <p className="mt-1 text-xs text-destructive">{errors[`rules.${idx}.condition`]}</p>
+                    )}
+                  </div>
 
                   <div className="flex gap-2">
                     {SEVERITY_OPTIONS.map((sev) => (
