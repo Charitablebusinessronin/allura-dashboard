@@ -24,6 +24,20 @@ bun install
 bun run dev
 ```
 
+## Docker on port 3102
+
+```bash
+docker compose up --build
+```
+
+Open:
+
+```text
+http://localhost:3102/
+```
+
+Override the host port with `DASHBOARD_PORT` if needed.
+
 ## Build
 
 ```bash

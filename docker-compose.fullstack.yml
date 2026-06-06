@@ -6,7 +6,7 @@ services:
       dockerfile: Dockerfile
     container_name: allura-dashboard
     ports:
-      - "${DASHBOARD_PORT:-8420}:80"
+      - "${DASHBOARD_PORT:-3102}:80"
     environment:
       - VITE_API_BASE_URL=http://mock-api:13400
     networks:
